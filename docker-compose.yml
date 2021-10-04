@@ -1,0 +1,31 @@
+version: '3'
+
+services:
+  api-db:
+    image: postgres
+    container_name: "proxy_db"
+    restart: unless-stopped
+    environment:
+      - POSTGRES_HOST_AUTH_METHOD=trust
+    volumes:
+      - ./scripts/postgresql/init_api_db.sql:/docker-entrypoint-initdb.d/init_api_db.sql
+    ports:
+      - "5432:5432"
+  api-server:
+    image: duckluckbreakout/proxy-api-server:1.0
+    container_name: "proxy_api"
+    restart: unless-stopped
+    volumes:
+      - ./configs/app/api_server.yaml:/configs/app/api_server.yaml
+      - ./genCerts/:/genCerts/
+    ports:
+      - "8000:8000"
+  proxy-server:
+    image: duckluckbreakout/proxy-server:1.0
+    container_name: "proxy_server"
+    restart: unless-stopped
+    volumes:
+      - ./configs/app/api_server.yaml:/configs/app/api_server.yaml
+      - ./genCerts/:/genCerts/
+    ports:
+      - "8080:8080"

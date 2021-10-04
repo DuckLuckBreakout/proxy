@@ -1,0 +1,20 @@
+name: Build
+
+on:
+  push:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Login to DockerHub Registry
+        run: echo ${{ secrets.DOCKERHUB_PASSWORD }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+      - name: Build Docker proxy-api-server image
+        run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/proxy-api-server:1.0 --target proxy-api-server .
+      - name: Push the proxy-api-server image
+        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/proxy-api-server:1.0
+      - name: Build Docker proxy-server image
+        run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/proxy-server:1.0 --target proxy-server .
+      - name: Push the proxy-server image
+        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/proxy-server:1.0

@@ -1,0 +1,13 @@
+server-data:
+  host: ""
+  port: "8080"
+  api-port: "8000"
+
+
+postgresql-data:
+  user: "postgres"
+  password: "postgres"
+  db-name: "proxy"
+  port: "5432"
+  host: "api-db"
+  sslmode: "disable"
