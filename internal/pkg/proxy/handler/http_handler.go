@@ -24,6 +24,7 @@ func (h *UserHandler) HandleRequestHttp(writer http.ResponseWriter, request *htt
 			panic(err)
 		}
 	} else {
+		var requestId int64
 		if h.needSave {
 			params := make(gin.Params, 0)
 			data, _ := url.ParseQuery(request.URL.RawQuery)
@@ -33,13 +34,14 @@ func (h *UserHandler) HandleRequestHttp(writer http.ResponseWriter, request *htt
 					Value: val[0],
 				})
 			}
-			err := h.proxyUCase.SaveReqToDB(request, "http", &params)
+			var err error
+			requestId, err = h.proxyUCase.SaveReqToDB(request, "http", &params)
 			if err != nil {
 				panic(err)
 			}
 		}
 
-		_, err := h.proxyUCase.HandleHttpRequest(writer, request)
+		_, err := h.proxyUCase.HandleHttpRequest(writer, request, requestId)
 		if err != nil {
 			panic(err)
 		}
@@ -64,7 +66,7 @@ func (h *UserHandler) ScanRequest(c *gin.Context, params map[string]string) {
 		}
 	}
 
-	response, err := h.proxyUCase.HandleHttpRequest(c.Writer, c.Request)
+	response, err := h.proxyUCase.HandleHttpRequest(c.Writer, c.Request, 0)
 	if err != nil {
 		panic(err)
 	}
@@ -181,14 +183,16 @@ func (h *UserHandler) HandleRequest(c *gin.Context) {
 			panic(err)
 		}
 	} else {
+		var requestId int64
 		if h.needSave {
-			err := h.proxyUCase.SaveReqToDB(c.Request, "http", &c.Params)
+			var err error
+			requestId, err = h.proxyUCase.SaveReqToDB(c.Request, "http", &c.Params)
 			if err != nil {
 				panic(err)
 			}
 		}
 
-		_, err := h.proxyUCase.HandleHttpRequest(c.Writer, c.Request)
+		_, err := h.proxyUCase.HandleHttpRequest(c.Writer, c.Request, requestId)
 		if err != nil {
 			panic(err)
 		}

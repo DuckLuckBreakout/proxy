@@ -15,3 +15,12 @@ CREATE TABLE IF NOT EXISTS requests (
     body        TEXT NOT NULL,
     params      JSONB NOT NULL
 );
+
+DROP TABLE IF EXISTS responses;
+CREATE TABLE IF NOT EXISTS responses (
+    id          SERIAL NOT NULL PRIMARY KEY,
+    request_id          INT NOT NULL,
+    headers     JSONB NOT NULL,
+    status          INT NOT NULL,
+    body        TEXT NOT NULL
+);

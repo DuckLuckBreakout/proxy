@@ -105,7 +105,7 @@ func (hs *HttpsService) SaveReqToDB(request *http.Request) error {
 		Body:    requestBody.String(),
 	}
 
-	err = hs.crutch.InsertInto(req)
+	_, err = hs.crutch.InsertRequest(req)
 	if err != nil {
 		return err
 	}

@@ -49,6 +49,10 @@ func Start() {
 		),
 		Handler: http.HandlerFunc(proxyHandler.HandleRequestHttp),
 	}
-	server.ListenAndServe()
+
 	fmt.Println("Proxy ready")
+	err = server.ListenAndServe()
+	if err != nil {
+		panic(err)
+	}
 }

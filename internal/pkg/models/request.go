@@ -10,3 +10,11 @@ type Request struct {
 	Body    string
 	Params map[string]string
 }
+
+type Response struct {
+	Id        int64
+	RequestId int64
+	Status      int
+	Headers   map[string][]string
+	Body      string
+}

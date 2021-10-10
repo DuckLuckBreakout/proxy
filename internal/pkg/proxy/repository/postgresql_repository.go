@@ -11,26 +11,43 @@ type ProxyRepository struct {
 	dbConn *sqlx.DB
 }
 
-func (u ProxyRepository) InsertInto(request *models.Request) error {
+func (u ProxyRepository) InsertRequest(request *models.Request) (int64, error) {
 	bs, err := json.Marshal(request.Headers)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	paramsB, err := json.Marshal(request.Params)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	if err := u.dbConn.QueryRow(
 		`INSERT INTO requests(method, scheme, host, path, headers, body, params) 
 				VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
 		request.Method, request.Scheme, request.Host, request.Path, string(bs), request.Body, string(paramsB)).Scan(&request.Id); err != nil {
+		return 0, err
+	}
+
+	return request.Id, nil
+}
+
+func (u ProxyRepository) InsertResponse(response *models.Response) error {
+	bs, err := json.Marshal(response.Headers)
+	if err != nil {
+		return err
+	}
+
+	if err := u.dbConn.QueryRow(
+		`INSERT INTO responses(request_id, headers, status, body) 
+				VALUES ($1, $2, $3, $4) RETURNING id`,
+		response.RequestId, string(bs), response.Status, response.Body).Scan(&response.Id); err != nil {
 		return err
 	}
 
 	return nil
 }
+
 
 func (u ProxyRepository) GetRequest(id int64) (*models.Request, error) {
 	rows, err := u.dbConn.Queryx(`SELECT * from requests where id = $1`, id)

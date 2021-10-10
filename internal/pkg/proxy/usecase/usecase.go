@@ -3,8 +3,8 @@ package usecase
 import (
 	"compress/gzip"
 	"encoding/json"
-	"github.com/DuckLuckBreakout/proxy/internal/pkg/proxy"
 	https "github.com/DuckLuckBreakout/proxy/internal/pkg/https"
+	"github.com/DuckLuckBreakout/proxy/internal/pkg/proxy"
 	"github.com/gin-gonic/gin"
 	"io"
 	"io/ioutil"
@@ -23,10 +23,10 @@ func NewUseCase(proxyRepo proxy.Repository) proxy.UseCase {
 	}
 }
 
-func (u *ProxyUseCase) SaveReqToDB(request *http.Request, scheme string, params *gin.Params) error {
+func (u *ProxyUseCase) SaveReqToDB(request *http.Request, scheme string, params *gin.Params) (int64, error) {
 	bodyBytes, err := ioutil.ReadAll(request.Body)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	var allParams map[string]string
@@ -51,7 +51,36 @@ func (u *ProxyUseCase) SaveReqToDB(request *http.Request, scheme string, params 
 		Params: allParams,
 	}
 
-	err = u.proxyRepo.InsertInto(req)
+	requestId, err := u.proxyRepo.InsertRequest(req)
+	if err != nil {
+		return 0, err
+	}
+
+	return requestId, nil
+}
+
+func (u *ProxyUseCase) SaveResToDB(response *http.Response, requestId int64) error {
+	bodyBytes, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		//return err
+		bodyBytes = make([]byte, 0)
+	}
+
+	var allParams map[string]string
+	json.Unmarshal(bodyBytes, &allParams)
+	if allParams == nil {
+		allParams = make(map[string]string)
+	}
+
+
+	res := &models.Response{
+		RequestId:  requestId,
+		Status:    response.StatusCode,
+		Headers: response.Header,
+		Body:    string(bodyBytes),
+	}
+
+	err = u.proxyRepo.InsertResponse(res)
 	if err != nil {
 		return err
 	}
@@ -95,7 +124,7 @@ func decodeResponse(response *http.Response) ([]byte, error) {
 	return bodyByte, nil
 }
 
-func (u *ProxyUseCase) HandleHttpRequest(writer http.ResponseWriter, interceptedHttpRequest *http.Request) (string, error) {
+func (u *ProxyUseCase) HandleHttpRequest(writer http.ResponseWriter, interceptedHttpRequest *http.Request, requestId int64) (string, error) {
 	proxyResponse, err := u.DoHttpRequest(interceptedHttpRequest)
 	if err != nil {
 		panic(err)
@@ -117,6 +146,11 @@ func (u *ProxyUseCase) HandleHttpRequest(writer http.ResponseWriter, intercepted
 	}
 
 	defer proxyResponse.Body.Close()
+
+	err = u.SaveResToDB(proxyResponse, requestId)
+	if err != nil {
+		panic(err)
+	}
 	return string(decodedResponse), nil
 }
 
